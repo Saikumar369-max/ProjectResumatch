@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Create your ResuMatch account to start matching candidates to jobs." />
+  <title>ResuMatch — Sign Up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <!-- Brand -->
+      <div class="brand">
+        <div class="brand-icon">📄</div>
+        <h1>ResuMatch</h1>
+        <p>Create your account</p>
+      </div>
+
+      <!-- Signup Form -->
+      <form id="signup-form" onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" placeholder="Jane Doe" required />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@company.com" required />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Min 6 characters" required minlength="6" />
+        </div>
+
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role">
+            <option value="recruiter">Recruiter</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary" id="signup-btn">Create Account</button>
+      </form>
+
+      <!-- Footer -->
+      <div class="auth-footer">
+        Already have an account? <a href="index.html">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>redirectIfLoggedIn();</script>
+</body>
+</html>

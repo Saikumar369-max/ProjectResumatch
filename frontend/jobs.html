@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ResuMatch — Manage your job postings and recruiting pipeline." />
+  <title>ResuMatch — Job Postings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="app-body">
+
+  <!-- ── Top Navigation ──────────────────────────────────── -->
+  <nav class="top-nav" id="top-nav">
+    <div class="nav-inner">
+      <a href="dashboard.html" class="nav-brand">
+        <div class="nav-brand-icon">📄</div>
+        <span>ResuMatch</span>
+      </a>
+      <div class="nav-links">
+        <a href="dashboard.html" class="nav-link" id="nav-dashboard">Dashboard</a>
+        <a href="jobs.html" class="nav-link active" id="nav-jobs">Jobs</a>
+      </div>
+      <div class="nav-user">
+        <span class="nav-user-name" id="nav-user-name"></span>
+        <button class="nav-logout-btn" id="nav-logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page Content: Jobs List ─────────────────────────── -->
+  <main class="page-content" id="jobs-list-view">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Job Postings</h1>
+        <span class="count-badge" id="job-count-badge">0</span>
+      </div>
+      <button class="btn-create" id="btn-new-job" onclick="openCreateModal()">
+        <span class="btn-icon">＋</span> New Job
+      </button>
+    </div>
+
+    <!-- Jobs Grid -->
+    <div class="jobs-grid" id="jobs-grid">
+      <!-- Rendered by JS -->
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state hidden" id="empty-state">
+      <div class="empty-icon">📋</div>
+      <h2>No job postings yet</h2>
+      <p>Create your first job posting to start attracting candidates.</p>
+      <button class="btn-create" onclick="openCreateModal()">
+        <span class="btn-icon">＋</span> Create First Job
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="jobs-loading" id="jobs-loading">
+      <span class="spinner"></span> Loading jobs...
+    </div>
+  </main>
+
+  <!-- ── Full Page: Upload & Score Resumes ────────────────── -->
+  <main class="page-content hidden" id="upload-page-view">
+
+    <!-- Back button + Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <button class="btn-back" id="btn-back-to-jobs" onclick="backToJobs()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <h1 id="upload-page-title">Upload & Score Resumes</h1>
+      </div>
+      <button class="btn-delete-job hidden" id="btn-delete-job-page" onclick="deleteJobFromPage()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Delete Job & Results
+      </button>
+    </div>
+
+    <p class="upload-page-subtitle">Job: <strong id="upload-job-name"></strong></p>
+
+    <!-- Upload Content Area -->
+    <div class="upload-page-content">
+
+      <!-- Step 1: Dropzone -->
+      <div id="upload-step-dropzone">
+        <div class="upload-dropzone" id="upload-dropzone"
+             ondrop="handleUploadDrop(event)"
+             ondragover="handleUploadDragOver(event)"
+             ondragleave="handleUploadDragLeave(event)"
+             onclick="triggerFileInput()">
+          <div class="dropzone-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p class="dropzone-text">Drag & drop resumes here</p>
+          <p class="dropzone-hint">or click to browse files</p>
+          <span class="dropzone-formats">PDF, DOC, DOCX · Max 10 MB each</span>
+        </div>
+        <input type="file" id="resume-file-input" class="hidden" multiple
+               accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+               onchange="handleFileInputChange(event)" />
+
+        <!-- File list -->
+        <div class="upload-file-list" id="upload-file-list"></div>
+
+        <!-- Upload action -->
+        <div class="upload-page-actions" id="upload-actions">
+          <button type="button" class="btn-primary upload-btn-full" id="submit-upload-btn" disabled onclick="uploadResumes()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload & Get Scores
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Progress -->
+      <div class="upload-progress-area hidden" id="upload-progress-area">
+        <div class="upload-progress-track">
+          <div class="upload-progress-bar" id="upload-progress-bar"></div>
+        </div>
+        <p class="upload-progress-text" id="upload-progress-text">Uploading & parsing… 0%</p>
+      </div>
+
+      <!-- Step 3: Results Table -->
+      <div class="results-area hidden" id="results-area">
+        <div class="results-header">
+          <h3>📊 Match Results</h3>
+          <span class="results-count" id="results-count"></span>
+        </div>
+        <div class="results-table-wrapper">
+          <table class="results-table" id="results-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Resume ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Skills</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── Create Job Modal ────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="create-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Create New Job</h2>
+        <button class="modal-close" id="modal-close-btn" onclick="closeCreateModal()">✕</button>
+      </div>
+      <form id="create-job-form" onsubmit="handleCreateJob(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="job-title">Job Title *</label>
+            <input type="text" id="job-title" placeholder="e.g. Senior Frontend Engineer" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="job-department">Department</label>
+              <input type="text" id="job-department" placeholder="e.g. Engineering" />
+            </div>
+            <div class="form-group">
+              <label for="job-location">Location</label>
+              <input type="text" id="job-location" placeholder="e.g. Remote / NYC" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="job-type">Type</label>
+            <select id="job-type">
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Contract">Contract</option>
+              <option value="Internship">Internship</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="job-description">Description</label>
+            <textarea id="job-description" rows="4" placeholder="Describe the role, responsibilities, and team..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="job-requirements">Requirements</label>
+            <textarea id="job-requirements" rows="3" placeholder="Skills, experience, and qualifications needed..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeCreateModal()">Cancel</button>
+          <button type="submit" class="btn-primary" id="create-job-btn">Create Job</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Delete Confirmation Modal ───────────────────────── -->
+  <div class="modal-overlay hidden" id="delete-modal">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h2>Delete Job</h2>
+        <button class="modal-close" id="delete-modal-close" onclick="closeDeleteModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-msg">Are you sure you want to delete <strong id="delete-job-title"></strong>? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        <button type="button" class="btn-danger" id="confirm-delete-btn" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/jobs.js"></script>
+  <script>initJobsPage();</script>
+</body>
+</html>

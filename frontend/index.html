@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ResuMatch - AI-Driven Applicant Tracking System. Sign in to manage your recruiting pipeline." />
+  <title>ResuMatch — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <!-- Brand -->
+      <div class="brand">
+        <div class="brand-icon">📄</div>
+        <h1>ResuMatch</h1>
+        <p>Sign in to your account</p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@company.com" required />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" required />
+        </div>
+
+        <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+      </form>
+
+      <!-- Footer -->
+      <div class="auth-footer">
+        Don't have an account? <a href="signup.html">Create one</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>redirectIfLoggedIn();</script>
+</body>
+</html>

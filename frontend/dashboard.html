@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ResuMatch Dashboard - Manage your applicant tracking pipeline." />
+  <title>ResuMatch — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="app-body">
+
+  <!-- ── Top Navigation ──────────────────────────────────── -->
+  <nav class="top-nav" id="top-nav">
+    <div class="nav-inner">
+      <a href="dashboard.html" class="nav-brand">
+        <div class="nav-brand-icon">📄</div>
+        <span>ResuMatch</span>
+      </a>
+      <div class="nav-links">
+        <a href="dashboard.html" class="nav-link active" id="nav-dashboard">Dashboard</a>
+        <a href="jobs.html" class="nav-link" id="nav-jobs">Jobs</a>
+      </div>
+      <div class="nav-user">
+        <span class="nav-user-name" id="nav-user-name"></span>
+        <button class="nav-logout-btn" id="nav-logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page Content ────────────────────────────────────── -->
+  <main class="page-content" style="max-width: 640px;">
+    <div class="dashboard-card">
+      <!-- Welcome -->
+      <h1 class="welcome">Welcome, <span id="user-name">...</span> 👋</h1>
+      <p class="subtitle">Here's your profile overview</p>
+
+      <!-- Profile Info -->
+      <div class="profile-grid">
+        <div class="profile-item">
+          <span class="label">Name</span>
+          <span class="value" id="profile-name">—</span>
+        </div>
+        <div class="profile-item">
+          <span class="label">Email</span>
+          <span class="value" id="profile-email">—</span>
+        </div>
+        <div class="profile-item">
+          <span class="label">Role</span>
+          <span class="value" id="profile-role">—</span>
+        </div>
+        <div class="profile-item">
+          <span class="label">Joined</span>
+          <span class="value" id="profile-joined">—</span>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <a href="jobs.html" class="quick-action-link" id="go-to-jobs">
+          📋 Manage Job Postings
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script>
+    loadDashboard();
+    // Show user name in nav
+    const user = getUser();
+    if (user) {
+      document.getElementById("nav-user-name").textContent = user.name;
+    }
+  </script>
+</body>
+</html>
+
