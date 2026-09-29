@@ -629,6 +629,48 @@ def get_resumes(current_user, job_id):
     return jsonify({"resumes": resumes, "count": len(resumes)}), 200
 
 
+# ── Recruiter Stats (scoped to current user) ──────────────
+@app.route("/api/recruiter/stats", methods=["GET"])
+@token_required
+def recruiter_stats(current_user):
+    """Return stats scoped to the logged-in recruiter's own jobs and resumes."""
+    user_id = str(current_user["_id"])
+
+    # Jobs that belong to this recruiter
+    total_jobs  = jobs_col.count_documents({"created_by": user_id})
+    open_jobs   = jobs_col.count_documents({"created_by": user_id, "status": "open"})
+    closed_jobs = jobs_col.count_documents({"created_by": user_id, "status": "closed"})
+
+    # Resumes across this recruiter's jobs
+    job_ids = [str(j["_id"]) for j in jobs_col.find({"created_by": user_id}, {"_id": 1})]
+    total_resumes = resumes_col.count_documents({"job_id": {"$in": job_ids}}) if job_ids else 0
+
+    # Avg and best match score
+    avg_score = best_score = 0
+    if job_ids:
+        pipeline = [
+            {"$match": {"job_id": {"$in": job_ids}}},
+            {"$group": {
+                "_id":  None,
+                "avg":  {"$avg": "$match_score"},
+                "best": {"$max": "$match_score"}
+            }}
+        ]
+        result = list(resumes_col.aggregate(pipeline))
+        if result:
+            avg_score  = round(result[0]["avg"],  1)
+            best_score = result[0]["best"]
+
+    return jsonify({
+        "total_jobs":      total_jobs,
+        "open_jobs":       open_jobs,
+        "closed_jobs":     closed_jobs,
+        "total_resumes":   total_resumes,
+        "avg_match_score": avg_score,
+        "best_match":      best_score
+    }), 200
+
+
 # ── Admin Stats ────────────────────────────────────────────
 @app.route("/api/admin/stats", methods=["GET"])
 @token_required

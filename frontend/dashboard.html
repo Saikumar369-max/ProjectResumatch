@@ -34,42 +34,45 @@
 
     <!-- ── Overview Cards ──────────────────────────────── -->
     <div class="overview-grid" id="overview-grid">
-      <!-- HR Users -->
-      <div class="stat-card" id="stat-users">
-        <div class="stat-icon stat-icon--blue">👥</div>
-        <div class="stat-body">
-          <div class="stat-value" id="stat-total-users">—</div>
-          <div class="stat-label">HR Users</div>
-        </div>
-      </div>
 
       <!-- Total Jobs -->
-      <div class="stat-card" id="stat-jobs">
+      <div class="stat-card" id="rc-stat-jobs">
         <div class="stat-icon stat-icon--pink">💼</div>
         <div class="stat-body">
-          <div class="stat-value" id="stat-total-jobs">—</div>
-          <div class="stat-label">Total Jobs</div>
-          <div class="stat-sub" id="stat-jobs-sub">— open · — closed</div>
+          <div class="stat-value" id="rc-total-jobs">—</div>
+          <div class="stat-label">My Jobs</div>
+          <div class="stat-sub" id="rc-jobs-sub">— open · — closed</div>
         </div>
       </div>
 
       <!-- Resumes Processed -->
-      <div class="stat-card" id="stat-resumes">
+      <div class="stat-card" id="rc-stat-resumes">
         <div class="stat-icon stat-icon--teal">📄</div>
         <div class="stat-body">
-          <div class="stat-value" id="stat-total-resumes">—</div>
+          <div class="stat-value" id="rc-total-resumes">—</div>
           <div class="stat-label">Resumes Processed</div>
         </div>
       </div>
 
       <!-- Avg Match Score -->
-      <div class="stat-card" id="stat-score">
+      <div class="stat-card" id="rc-stat-score">
         <div class="stat-icon stat-icon--gold">⭐</div>
         <div class="stat-body">
-          <div class="stat-value" id="stat-avg-score">—</div>
+          <div class="stat-value" id="rc-avg-score">—</div>
           <div class="stat-label">Avg Match Score</div>
         </div>
       </div>
+
+      <!-- Best Match -->
+      <div class="stat-card" id="rc-stat-best">
+        <div class="stat-icon stat-icon--blue">🏆</div>
+        <div class="stat-body">
+          <div class="stat-value" id="rc-best-match">—</div>
+          <div class="stat-label">Best Match</div>
+          <div class="stat-sub">Top candidate score</div>
+        </div>
+      </div>
+
     </div>
 
     <!-- ── Profile Card ─────────────────────────────────── -->
@@ -111,7 +114,7 @@
   <script src="js/auth.js"></script>
   <script>
     loadDashboard();
-    loadAdminStats();
+    loadRecruiterStats();
     // Show user name in nav
     const user = getUser();
     if (user) {

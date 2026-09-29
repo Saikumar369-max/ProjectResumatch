@@ -2,4 +2,4 @@
 "*.pyc" 
 backend/.env
 .env
-__pycache__/
+backend/__pycache__

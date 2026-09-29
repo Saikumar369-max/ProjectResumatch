@@ -192,6 +192,56 @@ async function loadDashboard() {
   }
 }
 
+// ── Recruiter Stats (scoped) ─────────────────────────────
+async function loadRecruiterStats() {
+  const token = getToken();
+  if (!token) return;
+
+  const ids = ["rc-total-jobs", "rc-total-resumes", "rc-avg-score", "rc-best-match"];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("stat-loading");
+  });
+
+  try {
+    const res = await fetch(`${API_URL}/recruiter/stats`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+
+    const s = await res.json();
+
+    function countUp(el, target, suffix, decimals) {
+      suffix   = suffix   || "";
+      decimals = decimals || 0;
+      if (!el) return;
+      el.classList.remove("stat-loading");
+      if (target === 0) { el.textContent = "0" + suffix; return; }
+      const steps = Math.ceil(900 / 16);
+      let current = 0;
+      const increment = target / steps;
+      const timer = setInterval(function () {
+        current = Math.min(current + increment, target);
+        el.textContent = decimals
+          ? current.toFixed(decimals) + suffix
+          : Math.round(current) + suffix;
+        if (current >= target) clearInterval(timer);
+      }, 16);
+    }
+
+    countUp(document.getElementById("rc-total-jobs"),    s.total_jobs);
+    countUp(document.getElementById("rc-total-resumes"), s.total_resumes);
+    countUp(document.getElementById("rc-avg-score"),     s.avg_match_score, "%", 1);
+    countUp(document.getElementById("rc-best-match"),    s.best_match, "%");
+
+    var sub = document.getElementById("rc-jobs-sub");
+    if (sub) sub.textContent = s.open_jobs + " open · " + s.closed_jobs + " closed";
+
+  } catch (err) {
+    // Silently fail
+  }
+}
+
 // ── Admin Stats Overview ─────────────────────────────────
 async function loadAdminStats() {
   const token = getToken();
