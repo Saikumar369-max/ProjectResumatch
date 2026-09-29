@@ -1581,7 +1581,7 @@ body::before {
 .stat-loading {
   color: transparent !important;
   background: linear-gradient(90deg, var(--border) 25%, var(--bg-card) 50%, var(--border) 75%);
-  background-size: 200%% 100%%;
+  background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 6px;
   min-width: 48px;
@@ -1590,8 +1590,8 @@ body::before {
 }
 
 @keyframes shimmer {
-  0%%   { background-position: 200%% 0; }
-  100%% { background-position: -200%% 0; }
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 @media (max-width: 640px) {
