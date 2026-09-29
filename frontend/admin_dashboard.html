@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ResuMatch Admin Dashboard - Platform-wide overview." />
+  <title>ResuMatch — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="app-body">
+
+  <!-- ── Top Navigation ──────────────────────────────────── -->
+  <nav class="top-nav" id="top-nav">
+    <div class="nav-inner">
+      <a href="admin_dashboard.html" class="nav-brand">
+        <div class="nav-brand-icon">📄</div>
+        <span>ResuMatch</span>
+      </a>
+      <div class="nav-links">
+        <a href="admin_dashboard.html" class="nav-link active" id="nav-dashboard">Dashboard</a>
+      </div>
+      <div class="nav-user">
+        <span class="admin-badge">🛡️ Admin</span>
+        <span class="nav-user-name" id="nav-user-name"></span>
+        <button class="nav-logout-btn" id="nav-logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page Content ────────────────────────────────────── -->
+  <main class="page-content" style="max-width: 960px;">
+
+    <!-- ── Admin Header -->
+    <div class="admin-header">
+      <div>
+        <h1 class="admin-title">Admin Dashboard</h1>
+        <p class="admin-subtitle">Platform-wide overview across all recruiters</p>
+      </div>
+      <div class="admin-badge-large">🛡️ Administrator</div>
+    </div>
+
+    <!-- ── Overview Cards ──────────────────────────────── -->
+    <div class="overview-grid" id="overview-grid">
+      <!-- HR Users -->
+      <div class="stat-card" id="stat-users">
+        <div class="stat-icon stat-icon--blue">👥</div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-total-users">—</div>
+          <div class="stat-label">HR Users</div>
+          <div class="stat-sub">Registered recruiters</div>
+        </div>
+      </div>
+
+      <!-- Total Jobs -->
+      <div class="stat-card" id="stat-jobs">
+        <div class="stat-icon stat-icon--pink">💼</div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-total-jobs">—</div>
+          <div class="stat-label">Total Jobs</div>
+          <div class="stat-sub" id="stat-jobs-sub">— open · — closed</div>
+        </div>
+      </div>
+
+      <!-- Resumes Processed -->
+      <div class="stat-card" id="stat-resumes">
+        <div class="stat-icon stat-icon--teal">📄</div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-total-resumes">—</div>
+          <div class="stat-label">Resumes Processed</div>
+          <div class="stat-sub">Across all jobs</div>
+        </div>
+      </div>
+
+      <!-- Avg Match Score -->
+      <div class="stat-card" id="stat-score">
+        <div class="stat-icon stat-icon--gold">⭐</div>
+        <div class="stat-body">
+          <div class="stat-value" id="stat-avg-score">—</div>
+          <div class="stat-label">Avg Match Score</div>
+          <div class="stat-sub">Platform average</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Charts Grid ─────────────────────────────────── -->
+    <div class="charts-grid" id="charts-grid">
+
+      <!-- Score Distribution -->
+      <div class="chart-card" id="chart-card-score">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Score Distribution</h3>
+          <span class="chart-sub">Candidates by match quality</span>
+        </div>
+        <div class="chart-wrap chart-wrap--sm">
+          <canvas id="chart-score-dist"></canvas>
+        </div>
+        <div class="score-legend">
+          <span class="score-legend-item score-legend--red">🔴 Low (0–39)</span>
+          <span class="score-legend-item score-legend--amber">🟡 Mid (40–69)</span>
+          <span class="score-legend-item score-legend--green">🟢 High (70–100)</span>
+        </div>
+      </div>
+
+      <!-- Jobs by Type -->
+      <div class="chart-card" id="chart-card-type">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Jobs by Type</h3>
+          <span class="chart-sub">Employment type breakdown</span>
+        </div>
+        <div class="chart-wrap chart-wrap--sm">
+          <canvas id="chart-jobs-type"></canvas>
+        </div>
+      </div>
+
+      <!-- Resumes Over Time -->
+      <div class="chart-card chart-card--wide" id="chart-card-time">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Resumes Uploaded</h3>
+          <span class="chart-sub">Last 30 days</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart-resumes-time"></canvas>
+        </div>
+      </div>
+
+      <!-- Top Skills -->
+      <div class="chart-card chart-card--wide" id="chart-card-skills">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Top Skills</h3>
+          <span class="chart-sub">Most common across all resumes</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart-top-skills"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script>
+    // Guard: only admins may view this page
+    var _user = getUser();
+    if (!_user || _user.role !== "admin") {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("nav-user-name").textContent = _user.name;
+      loadAdminStats();
+      loadAdminCharts();
+    }
+  </script>
+</body>
+</html>
+

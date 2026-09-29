@@ -38,10 +38,14 @@ def serve_frontend(filename):
 # ── MongoDB Setup ──────────────────────────────────────────
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
-users_col = db["users"]
 
-# Create unique index on email
+# Recruiters collection
+users_col = db["users"]
 users_col.create_index("email", unique=True)
+
+# Admins collection (separate schema, same shape as users)
+admins_col = db["admins"]
+admins_col.create_index("email", unique=True)
 
 
 # ── JWT Decorator ──────────────────────────────────────────
@@ -58,7 +62,10 @@ def token_required(f):
 
         try:
             data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-            current_user = users_col.find_one({"_id": ObjectId(data["user_id"])})
+            # Route lookup to the correct collection based on user_type in token
+            user_type = data.get("user_type", "user")
+            collection = admins_col if user_type == "admin" else users_col
+            current_user = collection.find_one({"_id": ObjectId(data["user_id"])})
             if not current_user:
                 return jsonify({"error": "User not found"}), 401
         except jwt.ExpiredSignatureError:
@@ -71,9 +78,11 @@ def token_required(f):
 
 
 # ── Helper: Generate JWT ───────────────────────────────────
-def generate_token(user_id):
+def generate_token(user_id, user_type="user"):
+    """Generate a JWT embedding user_type so token_required resolves the right collection."""
     payload = {
         "user_id": str(user_id),
+        "user_type": user_type,
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=JWT_EXPIRY_HOURS)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
@@ -86,10 +95,12 @@ def signup():
     data = request.get_json()
 
     # Validate input
-    name = data.get("name", "").strip()
-    email = data.get("email", "").strip().lower()
+    name     = data.get("name", "").strip()
+    email    = data.get("email", "").strip().lower()
     password = data.get("password", "")
-    role = data.get("role", "recruiter")
+    role      = "recruiter"  # Always recruiter; admin accounts are provisioned separately
+    collection = users_col
+    user_type  = "user"
 
     if not name or not email or not password:
         return jsonify({"error": "Name, email, and password are required"}), 400
@@ -98,31 +109,31 @@ def signup():
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
     # Check if email already exists
-    if users_col.find_one({"email": email}):
+    if collection.find_one({"email": email}):
         return jsonify({"error": "Email already registered"}), 409
 
     # Hash password and insert
     hashed_pw = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
     user = {
-        "name": name,
-        "email": email,
-        "password": hashed_pw.decode("utf-8"),
-        "role": role,
+        "name":       name,
+        "email":      email,
+        "password":   hashed_pw.decode("utf-8"),
+        "role":       role,
         "created_at": datetime.datetime.utcnow()
     }
 
-    result = users_col.insert_one(user)
-    token = generate_token(result.inserted_id)
+    result = collection.insert_one(user)
+    token  = generate_token(result.inserted_id, user_type=user_type)
 
     return jsonify({
         "message": "Account created successfully",
         "token": token,
         "user": {
-            "id": str(result.inserted_id),
-            "name": name,
+            "id":    str(result.inserted_id),
+            "name":  name,
             "email": email,
-            "role": role
+            "role":  role
         }
     }), 201
 
@@ -131,22 +142,35 @@ def signup():
 def login():
     data = request.get_json()
 
-    email = data.get("email", "").strip().lower()
+    email    = data.get("email", "").strip().lower()
     password = data.get("password", "")
+    role     = data.get("role", "recruiter")  # sent by the login-page role toggle
 
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
-    # Find user
-    user = users_col.find_one({"email": email})
+    # Route to the correct collection based on requested role
+    if role == "admin":
+        collection = admins_col
+        user_type  = "admin"
+    else:
+        collection = users_col
+        user_type  = "user"
+
+    # Find account
+    user = collection.find_one({"email": email})
     if not user:
         return jsonify({"error": "Invalid email or password"}), 401
 
-    # Check password
+    # Verify password
     if not bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
         return jsonify({"error": "Invalid email or password"}), 401
 
-    token = generate_token(user["_id"])
+    # Confirm the stored role matches what was requested
+    if user.get("role") != role:
+        return jsonify({"error": f"This account is not registered as {role.capitalize()}"}), 403
+
+    token = generate_token(user["_id"], user_type=user_type)
 
     return jsonify({
         "message": "Login successful",
@@ -158,6 +182,53 @@ def login():
             "role": user["role"]
         }
     }), 200
+
+
+# ── Admin Register (API-only, no frontend form) ─────────────
+@app.route("/api/admin/register", methods=["POST"])
+def admin_register():
+    """
+    Create an admin account. Call this directly via API or a one-off script.
+    Not exposed in the frontend — admins are provisioned out-of-band.
+    """
+    data = request.get_json()
+
+    name     = data.get("name", "").strip()
+    email    = data.get("email", "").strip().lower()
+    password = data.get("password", "")
+
+    if not name or not email or not password:
+        return jsonify({"error": "Name, email, and password are required"}), 400
+
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    if admins_col.find_one({"email": email}):
+        return jsonify({"error": "Admin email already registered"}), 409
+
+    hashed_pw = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+
+    admin_doc = {
+        "name":       name,
+        "email":      email,
+        "password":   hashed_pw.decode("utf-8"),
+        "role":       "admin",
+        "created_at": datetime.datetime.utcnow()
+    }
+
+    result = admins_col.insert_one(admin_doc)
+    token  = generate_token(result.inserted_id, user_type="admin")
+
+    return jsonify({
+        "message": "Admin account created successfully",
+        "token": token,
+        "user": {
+            "id":    str(result.inserted_id),
+            "name":  name,
+            "email": email,
+            "role":  "admin"
+        }
+    }), 201
 
 
 @app.route("/api/me", methods=["GET"])
@@ -556,6 +627,112 @@ def get_resumes(current_user, job_id):
         r["created_at"] = r["created_at"].isoformat()
 
     return jsonify({"resumes": resumes, "count": len(resumes)}), 200
+
+
+# ── Admin Stats ────────────────────────────────────────────
+@app.route("/api/admin/stats", methods=["GET"])
+@token_required
+def admin_stats(current_user):
+    """Return global counts for the admin overview dashboard. Admin only."""
+    if current_user.get("role") != "admin":
+        return jsonify({"error": "Admin access required"}), 403
+
+    # Total HR users (all recruiter accounts)
+    total_users = users_col.count_documents({})
+
+    # All jobs across every recruiter
+    total_jobs  = jobs_col.count_documents({})
+    open_jobs   = jobs_col.count_documents({"status": "open"})
+    closed_jobs = jobs_col.count_documents({"status": "closed"})
+
+    # All resumes across every job
+    total_resumes = resumes_col.count_documents({})
+
+    # Global average match score
+    avg_score = 0
+    pipeline = [
+        {"$group": {"_id": None, "avg": {"$avg": "$match_score"}}}
+    ]
+    result = list(resumes_col.aggregate(pipeline))
+    if result:
+        avg_score = round(result[0]["avg"], 1)
+
+    return jsonify({
+        "total_users":     total_users,
+        "total_jobs":      total_jobs,
+        "open_jobs":       open_jobs,
+        "closed_jobs":     closed_jobs,
+        "total_resumes":   total_resumes,
+        "avg_match_score": avg_score
+    }), 200
+
+
+# ── Admin Charts Data ──────────────────────────────────────
+@app.route("/api/admin/charts", methods=["GET"])
+@token_required
+def admin_charts(current_user):
+    """Return chart data for the admin dashboard. Admin only."""
+    if current_user.get("role") != "admin":
+        return jsonify({"error": "Admin access required"}), 403
+
+    # ── 1. Score distribution (0-39 Low, 40-69 Mid, 70-100 High) ──
+    score_low  = resumes_col.count_documents({"match_score": {"$lt": 40}})
+    score_mid  = resumes_col.count_documents({"match_score": {"$gte": 40, "$lt": 70}})
+    score_high = resumes_col.count_documents({"match_score": {"$gte": 70}})
+
+    # ── 2. Jobs by type ────────────────────────────────────────────
+    type_pipeline = [
+        {"$group": {"_id": "$type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    jobs_by_type = [
+        {"type": j["_id"] or "Unknown", "count": j["count"]}
+        for j in jobs_col.aggregate(type_pipeline)
+    ]
+
+    # ── 3. Resumes uploaded over the last 30 days ──────────────────
+    thirty_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=30)
+    time_pipeline = [
+        {"$match": {"created_at": {"$gte": thirty_days_ago}}},
+        {"$group": {
+            "_id": {
+                "y": {"$year":  "$created_at"},
+                "m": {"$month": "$created_at"},
+                "d": {"$dayOfMonth": "$created_at"}
+            },
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.y": 1, "_id.m": 1, "_id.d": 1}}
+    ]
+    resumes_over_time = [
+        {
+            "date":  f"{r['_id']['y']}-{r['_id']['m']:02d}-{r['_id']['d']:02d}",
+            "count": r["count"]
+        }
+        for r in resumes_col.aggregate(time_pipeline)
+    ]
+
+    # ── 4. Top skills (parse comma-separated skills field) ─────────
+    skill_counts = {}
+    for r in resumes_col.find({}, {"skills": 1}):
+        raw = r.get("skills", "")
+        if raw and raw.strip().upper() != "N/A":
+            for skill in raw.split(","):
+                s = skill.strip()
+                if s:
+                    skill_counts[s] = skill_counts.get(s, 0) + 1
+    top_skills = sorted(skill_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    return jsonify({
+        "score_distribution": {
+            "low":  score_low,    # 0–39  (red)
+            "mid":  score_mid,    # 40–69 (amber)
+            "high": score_high    # 70–100 (green)
+        },
+        "jobs_by_type":      jobs_by_type,
+        "resumes_over_time": resumes_over_time,
+        "top_skills":        [{"skill": s, "count": c} for s, c in top_skills]
+    }), 200
 
 
 # ── Run ────────────────────────────────────────────────────

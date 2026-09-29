@@ -21,6 +21,18 @@
 
       <!-- Login Form -->
       <form id="login-form" onsubmit="handleLogin(event)">
+
+        <!-- Role Toggle -->
+        <div class="role-toggle" id="role-toggle">
+          <button type="button" class="role-tab active" id="role-recruiter" onclick="selectRole('recruiter')">
+            🧑‍💼 Recruiter
+          </button>
+          <button type="button" class="role-tab" id="role-admin" onclick="selectRole('admin')">
+            🛡️ Admin
+          </button>
+        </div>
+        <input type="hidden" id="login-role" value="recruiter" />
+
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" placeholder="you@company.com" required />
